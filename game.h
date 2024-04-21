@@ -883,6 +883,7 @@ void go_home(){
 
 }
 
+//work in progress
 void save_game(){
 
     write("Saving");
@@ -898,8 +899,36 @@ void save_game(){
 
     if(outputFile.is_open()){
         outputFile << player.name << std::endl;
+        outputFile << player.level << std::endl;
+        outputFile << player.cur_health << std::endl;
+
+        std::cout << "Game saved successfully!" << std::endl;
+    } else {
+        std::cerr << "Unable to open file for saving!" << std::endl;
     }
 
+    outputFile.close();
+
+}
+
+//work in progress
+Character load_game() {
+
+    Character player;
+    std::ifstream inputFile("save.txt");
+
+    if (inputFile.is_open()) {
+        getline(inputFile, player.name);
+        inputFile >> player.level;
+        inputFile >> player.cur_health;
+
+        std::cout << "Game loaded successfully!" << std::endl;
+    } else {
+        std::cerr << "Unable to open file for loading!" << std::endl;
+    }
+
+    inputFile.close();
+    return player;
 }
 
 #endif
