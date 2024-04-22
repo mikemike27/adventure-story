@@ -1,6 +1,10 @@
 #ifndef game
 #define game
 
+#include <nlohmann/json.hpp>
+
+//using json = nlohmann::json;
+
 bool quitGame = false;
 bool player_die = false;
 
@@ -29,6 +33,7 @@ void level_up(int targetLevel);
 void changed_health(int targetAmount, string msg);
 void go_home();
 void save_game();
+void load_game();
 
 void main_menu(){
 
@@ -164,6 +169,12 @@ void start_game(){
             case 7:
                 //check stat
                 check_stat();
+                break;
+            case 9:
+                save_game();
+                break;
+            case 10:
+                load_game();
                 break;
             case 11:
                 
@@ -883,9 +894,38 @@ void go_home(){
 
 }
 
-//work in progress
 void save_game(){
 
+    nlohmann::json gameData;
+
+    gameData["player"]["name"] = player.name;
+    gameData["player"]["level"] = player.level;
+    gameData["player"]["experience"] = player.experience;
+    gameData["player"]["health"] = player.health;
+    gameData["player"]["cur_health"] = player.cur_health;
+    gameData["player"]["fatigue"] = player.fatigue;
+    gameData["player"]["gold"] = player.gold;
+
+    for(int i=0; i<player.cur_item_count;i++){
+        string temp = std::to_string(i);
+        gameData["player"]["inventory"][temp]["item_type"] = player.inventory[i].item_type;
+        gameData["player"]["inventory"][temp]["title"] = player.inventory[i].title;
+        gameData["player"]["inventory"][temp]["amount"] = player.inventory[i].amount;
+        gameData["player"]["inventory"][temp]["level"] = player.inventory[i].level;
+        gameData["player"]["inventory"][temp]["attack"] = player.inventory[i].attack;
+        gameData["player"]["inventory"][temp]["defense"] = player.inventory[i].defense;
+    }
+    
+    gameData["player"]["cur_item_count"] = player.cur_item_count;
+    gameData["player"]["holding_equip"] = player.holding_equip;
+    //gameData["player"]["learned_skill"] = player.learned_skill;
+    //gameData["player"]["buff_list"] = player.buff_list;
+    gameData["player"]["cur_buff_count"] = player.cur_buff_count;
+
+    std::ofstream file("savegame.json");
+    file << gameData.dump(4); // Pretty print with 4 spaces
+
+    //visual
     write("Saving");
 
     for(int i=0; i<10; i++){
@@ -895,40 +935,53 @@ void save_game(){
 
     }
 
-    std::ofstream outputFile("save.txt");
-
-    if(outputFile.is_open()){
-        outputFile << player.name << std::endl;
-        outputFile << player.level << std::endl;
-        outputFile << player.cur_health << std::endl;
-
-        std::cout << "Game saved successfully!" << std::endl;
-    } else {
-        std::cerr << "Unable to open file for saving!" << std::endl;
-    }
-
-    outputFile.close();
+    write_line("Game data saved successfully!");
 
 }
 
 //work in progress
-Character load_game() {
+void load_game() {
 
-    Character player;
-    std::ifstream inputFile("save.txt");
+    // Load and decrypt game data
+    std::ifstream file("savegame.json");
+    nlohmann::json gameData;
 
-    if (inputFile.is_open()) {
-        getline(inputFile, player.name);
-        inputFile >> player.level;
-        inputFile >> player.cur_health;
+    file >> gameData;
 
-        std::cout << "Game loaded successfully!" << std::endl;
-    } else {
-        std::cerr << "Unable to open file for loading!" << std::endl;
+    player.name = gameData["player"]["name"].get<std::string>();
+    player.level = gameData["player"]["level"].get<int>();
+    player.experience = gameData["player"]["experience"].get<float>();
+    player.health = gameData["player"]["health"].get<int>();
+    player.cur_health = gameData["player"]["cur_health"].get<int>();
+    player.fatigue = gameData["player"]["fatigue"].get<int>();
+    player.gold = gameData["player"]["gold"].get<int>();
+    player.cur_item_count = gameData["player"]["cur_item_count"].get<int>();
+
+    for(int i=0; i<player.cur_item_count;i++){
+        string temp = std::to_string(i);
+        player.inventory[i].item_type = gameData["player"]["inventory"][temp]["item_type"].get<ItemType>();
+        player.inventory[i].title = gameData["player"]["inventory"][temp]["title"].get<string>();
+        player.inventory[i].amount = gameData["player"]["inventory"][temp]["amount"].get<int>();
+        player.inventory[i].level = gameData["player"]["inventory"][temp]["level"].get<int>();
+        player.inventory[i].attack = gameData["player"]["inventory"][temp]["attack"].get<int>();
+        player.inventory[i].defense = gameData["player"]["inventory"][temp]["defense"].get<int>();
     }
 
-    inputFile.close();
-    return player;
+    player.holding_equip = gameData["player"]["holding_equip"].get<int>();
+    player.cur_buff_count = gameData["player"]["cur_buff_count"].get<int>();
+
+    //visual
+    write("Loading");
+
+    for(int i=0; i<10; i++){
+
+        delay(800);
+        write(".");
+
+    }
+
+    write_line("Game data loaded successfully!");
+
 }
 
 #endif
